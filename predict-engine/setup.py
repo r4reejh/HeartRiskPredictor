@@ -11,6 +11,8 @@ setup(name='heart-risk',
     packages=['lib'],
     install_requires=[
         'sklearn',
+        'scipy',
+        'redis',
         'pandas',
         'numpy',
         'celery'
