@@ -23,7 +23,6 @@ func broker(vv []float64) (label float64, isOk bool) {
 	if err != nil {
 		panic(err)
 	}
-
 	res, err := asyncResult.Get(5 * time.Second)
 	if err != nil {
 		isOk = false

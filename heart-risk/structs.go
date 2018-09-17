@@ -1,20 +1,21 @@
 package main
 
-type inputStruct struct {
-	name     string
-	age      float64
-	sex      float64
-	cp       float64
-	trestbps float64
-	chol     float64
-	fbs      float64
-	restecg  float64
-	thalach  float64
-	exang    float64
-	oldpeak  float64
-	slope    float64
-	ca       float64
-	thal     float64
+// sample InputStruct
+type InputStruct struct {
+	Name     string
+	Age      float64
+	Sex      float64
+	Cp       float64
+	Trestbps float64
+	Chol     float64
+	Fbs      float64
+	Restecg  float64
+	Thalach  float64
+	Exang    float64
+	Oldpeak  float64
+	Slope    float64
+	Ca       float64
+	Thal     float64
 }
 
 type errorStruct struct {
