@@ -9,7 +9,7 @@ import (
 
 func main() {
 	valueTest()
-	testBroker()
+	//testBroker()
 	initConnector()
 
 	http.HandleFunc("/predict", predict)
