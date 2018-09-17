@@ -11,8 +11,11 @@ func main() {
 	valueTest()
 	testBroker()
 	initConnector()
+
 	http.HandleFunc("/predict", predict)
 	http.HandleFunc("/test", test)
+	http.HandleFunc("/login", login)
+
 	srv := &http.Server{
 		ReadTimeout:  5 * time.Second,
 		WriteTimeout: 3 * time.Second,

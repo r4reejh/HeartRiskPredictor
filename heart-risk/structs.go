@@ -2,7 +2,7 @@ package main
 
 import "time"
 
-// sample InputStruct
+// InputStruct is the struct for predict route
 type InputStruct struct {
 	Name     string
 	Age      float64
@@ -29,4 +29,10 @@ type responseStruct struct {
 	Name  string
 	Label float64
 	Date  time.Time
+}
+
+// Credentials  is the struct for login page
+type Credentials struct {
+	Username string
+	Password string
 }
