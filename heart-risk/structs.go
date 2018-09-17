@@ -1,5 +1,7 @@
 package main
 
+import "time"
+
 // sample InputStruct
 type InputStruct struct {
 	Name     string
@@ -24,5 +26,7 @@ type errorStruct struct {
 }
 
 type responseStruct struct {
+	Name  string
 	Label float64
+	Date  time.Time
 }

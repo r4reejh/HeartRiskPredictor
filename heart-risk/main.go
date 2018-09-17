@@ -59,6 +59,8 @@ func predict(rw http.ResponseWriter, req *http.Request) {
 	} else {
 		response := responseStruct{}
 		response.Label = x
+		response.Name = T.Name
+		response.Date = time.Now()
 
 		rb, err := json.Marshal(response)
 		if err != nil {
