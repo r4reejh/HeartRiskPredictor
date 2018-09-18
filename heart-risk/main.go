@@ -10,9 +10,12 @@ import (
 func main() {
 	valueTest()
 	//testBroker()
+	initSessionCache()
 	initConnector()
 
-	http.HandleFunc("/predict", predict)
+	predictHandler := http.HandlerFunc(predict)
+
+	http.Handle("/predict", checkSession(predictHandler))
 	http.HandleFunc("/test", test)
 	http.HandleFunc("/login", login)
 
