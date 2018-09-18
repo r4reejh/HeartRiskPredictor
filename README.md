@@ -1,4 +1,4 @@
-## OSP-heart-disease-risk-predictor
+## Heart Disease Risk Predictor
 Project for the Open Source Programming course, to predict whether a person is susceptible to heart disease or not
 
 ## Prediction Engine:
@@ -15,20 +15,20 @@ Project for the Open Source Programming course, to predict whether a person is s
 __Sample Request Body__
 ```json
 {
-	"name":"Reejh Ghosh",
-	"age":43.0,
-	"sex":1,
-	"cp":0,	
-	"trestbps":120,	
-	"chol":177,	
-	"fbs":0,	
-	"restecg":0,	
-	"thalach":120,	
-	"exang":1,	
-	"oldpeak":2.5,	
-	"slope":1,	
-	"ca":0	,
-	"thal":3
+    "name":"Reejh Ghosh",
+    "age":43.0,
+    "sex":1,
+    "cp":0,	
+    "trestbps":120,	
+    "chol":177,	
+    "fbs":0,	
+    "restecg":0,	
+    "thalach":120,	
+    "exang":1,	
+    "oldpeak":2.5,	
+    "slope":1,	
+    "ca":0	,
+    "thal":3
 }
 ```
 
