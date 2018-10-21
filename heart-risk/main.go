@@ -9,17 +9,23 @@ import (
 
 func main() {
 	valueTest()
-	testBroker()
+	//testBroker()
 	initSessionCache()
 	initConnector()
+	initRegex()
+	dbInit()
 
 	predictHandler := http.HandlerFunc(predict)
 	loginHandler := http.HandlerFunc(login)
+	signupHandler := http.HandlerFunc(signup)
 	testHandler := http.HandlerFunc(test)
+	infoHandler := http.HandlerFunc(info)
 
 	http.Handle("/predict", checkSessionToken(predictHandler))
 	http.Handle("/test", checkSessionToken(testHandler))
 	http.Handle("/login", corsHandler(loginHandler))
+	http.Handle("/signup", corsHandler(signupHandler))
+	http.Handle("/info", corsHandler(infoHandler))
 	http.HandleFunc("/echo", echo)
 
 	srv := &http.Server{
@@ -56,7 +62,6 @@ func predict(rw http.ResponseWriter, req *http.Request) {
 		errorX := errorStruct{}
 		errorX.Message = "Some Error"
 		errorX.Status = 500
-
 		erb, err := json.Marshal(errorX)
 		if err != nil {
 			panic(err)
@@ -65,20 +70,22 @@ func predict(rw http.ResponseWriter, req *http.Request) {
 		rw.Header().Set("Content-type", "application/json")
 		rw.WriteHeader(200)
 		rw.Write(erb)
-	} else {
-		response := responseStruct{}
-		response.Label = x
-		response.Name = T.Name
-		response.Date = time.Now()
-
-		rb, err := json.Marshal(response)
-		if err != nil {
-			panic(err)
-		}
-		rw.Header().Set("Content-type", "application/json")
-		rw.WriteHeader(200)
-		rw.Write(rb)
+		return
 	}
+	response := responseStruct{}
+	response.Label = x
+	response.Name = T.Name
+	response.Date = time.Now()
+
+	defer DBrecordScan(T, x)
+	rb, err := json.Marshal(response)
+	if err != nil {
+		panic(err)
+	}
+	rw.Header().Set("Content-type", "application/json")
+	rw.WriteHeader(200)
+	rw.Write(rb)
+	return
 }
 
 func test(rw http.ResponseWriter, req *http.Request) {
@@ -113,13 +120,14 @@ func echo(rw http.ResponseWriter, req *http.Request) {
 
 func corsHandler(h http.Handler) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
+
 		if r.Method == "OPTIONS" {
-			//handle preflight in here
 			allowedHeaders := "Accept, Content-Type, Content-Length, Accept-Encoding, Authorization,X-CSRF-Token"
 			w.Header().Set("Content-type", "application/json")
 			w.Header().Set("Access-Control-Allow-Origin", "*")
 			w.Header().Set("Access-Control-Allow-Headers", allowedHeaders)
 			w.Header().Set("Access-Control-Allow-Credentials", "true")
+			//handle preflight in here
 			w.WriteHeader(200)
 			return
 		}

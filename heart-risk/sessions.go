@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"regexp"
 	"time"
 
 	"github.com/gomodule/redigo/redis"
@@ -32,8 +33,8 @@ func login(rw http.ResponseWriter, req *http.Request) {
 	}
 
 	sessionToken, err := uuid.NewV4()
-	if T.Username == "r4reejh" && T.Password == "test" {
-		v, err := cache.Do("SETEX", sessionToken, "120", T.Username)
+	if DBcheckUserValid(T.Username, T.Password) {
+		v, err := cache.Do("SETEX", sessionToken, "86400", T.Username)
 		if err != nil {
 			rw.WriteHeader(http.StatusInternalServerError)
 			panic(err)
@@ -85,16 +86,71 @@ func login(rw http.ResponseWriter, req *http.Request) {
 	return
 }
 
+func signup(rw http.ResponseWriter, req *http.Request) {
+	var US User
+	var resB []byte
+	err := json.NewDecoder(req.Body).Decode(&US)
+	checkErr(err)
+	if DBfindUser(US.Username, US.Email) != true {
+		if validateUserDetails(US) != true {
+			errorMessage := errorStruct{}
+			errorMessage.Message = "Validation Error"
+			errorMessage.Status = 400
+
+			resB, err = json.Marshal(errorMessage)
+			checkErr(err)
+		} else {
+			DBCreateUser(US)
+			successMessage := errorStruct{}
+			successMessage.Message = "Created Successfully, you may login now"
+			successMessage.Status = 200
+
+			resB, err = json.Marshal(successMessage)
+		}
+	} else {
+		errorMessage := errorStruct{}
+		errorMessage.Message = "User already exists"
+		errorMessage.Status = 400
+
+		resB, err = json.Marshal(errorMessage)
+		checkErr(err)
+	}
+
+	allowedHeaders := "Accept, Content-Type, Content-Length, Accept-Encoding, Authorization,X-CSRF-Token"
+	rw.Header().Set("Content-type", "application/json")
+	rw.Header().Set("Access-Control-Allow-Origin", "*")
+	rw.Header().Set("Access-Control-Allow-Headers", allowedHeaders)
+	rw.Header().Set("Access-Control-Allow-Credentials", "true")
+	rw.WriteHeader(200)
+	rw.Write(resB)
+}
+
+func validateUserDetails(US User) (status bool) {
+	if len(US.Username) == 0 {
+		fmt.Println("username")
+		return false
+	}
+	if len(US.Password) < 1 {
+		fmt.Println("passw")
+		return false
+	}
+	re := regexp.MustCompile(emailRegex)
+	if re.MatchString(US.Email) != true {
+		fmt.Println("email regex")
+		return false
+	}
+	if len(US.Name) == 0 {
+		fmt.Println("name")
+		return false
+	}
+
+	return true
+}
+
 func checkSessionToken(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(rw http.ResponseWriter, req *http.Request) {
-		var X map[string]string
-		err := json.NewDecoder(req.Body).Decode(&X)
-		if err != nil {
-			panic(err)
-		}
-
-		if c, ok := X["token"]; ok {
-			sessionToken := c
+		if c, ok := req.Header["X-Hp-Token"]; ok {
+			sessionToken := c[0]
 			response, err := cache.Do("GET", sessionToken)
 			if err != nil {
 				rw.WriteHeader(http.StatusInternalServerError)
