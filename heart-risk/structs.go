@@ -25,6 +25,12 @@ type errorStruct struct {
 	Status  int
 }
 
+type loginResponse struct {
+	Message string
+	Status  int
+	Token   string
+}
+
 type responseStruct struct {
 	Name  string
 	Label float64

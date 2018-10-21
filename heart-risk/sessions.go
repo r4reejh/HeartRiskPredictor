@@ -21,15 +21,19 @@ func initSessionCache() {
 }
 
 func login(rw http.ResponseWriter, req *http.Request) {
-	creds := Credentials{}
-	err := json.NewDecoder(req.Body).Decode(&creds)
+
+	allowedHeaders := "Accept, Content-Type, Content-Length, Accept-Encoding, Authorization,X-CSRF-Token"
+
+	var T Credentials
+	decoder := json.NewDecoder(req.Body)
+	err := decoder.Decode(&T)
 	if err != nil {
 		panic(err)
 	}
 
 	sessionToken, err := uuid.NewV4()
-	if creds.Username == "r4reejh" && creds.Password == "test" {
-		v, err := cache.Do("SETEX", sessionToken, "120", creds.Username)
+	if T.Username == "r4reejh" && T.Password == "test" {
+		v, err := cache.Do("SETEX", sessionToken, "120", T.Username)
 		if err != nil {
 			rw.WriteHeader(http.StatusInternalServerError)
 			panic(err)
@@ -42,9 +46,10 @@ func login(rw http.ResponseWriter, req *http.Request) {
 			Expires: time.Now().Add(120 * time.Second),
 		})
 
-		successMessage := errorStruct{}
+		successMessage := loginResponse{}
 		successMessage.Message = "Logged in successfully"
 		successMessage.Status = 200
+		successMessage.Token = sessionToken.String()
 
 		srb, err := json.Marshal(successMessage)
 		if err != nil {
@@ -52,25 +57,83 @@ func login(rw http.ResponseWriter, req *http.Request) {
 		}
 
 		rw.Header().Set("Content-type", "application/json")
+		rw.Header().Set("Access-Control-Allow-Origin", "*")
+		rw.Header().Set("Access-Control-Allow-Headers", allowedHeaders)
+		rw.Header().Set("Access-Control-Allow-Credentials", "true")
 		rw.WriteHeader(200)
 		rw.Write(srb)
-	} else {
-		successMessage := errorStruct{}
-		successMessage.Message = "Credentials Incorrect"
-		successMessage.Status = 400
-
-		srb, err := json.Marshal(successMessage)
-		if err != nil {
-			panic(err)
-		}
-
-		rw.Header().Set("Content-type", "application/json")
-		rw.WriteHeader(200)
-		rw.Write(srb)
+		return
 	}
+
+	// catch all
+
+	successMessage := errorStruct{}
+	successMessage.Message = "Credentials Incorrect"
+	successMessage.Status = 400
+
+	srb, err := json.Marshal(successMessage)
+	if err != nil {
+		panic(err)
+	}
+
+	rw.Header().Set("Content-type", "application/json")
+	rw.Header().Set("Access-Control-Allow-Origin", "*")
+	rw.Header().Set("Access-Control-Allow-Headers", allowedHeaders)
+	rw.Header().Set("Access-Control-Allow-Credentials", "true")
+	rw.WriteHeader(200)
+	rw.Write(srb)
+	return
 }
 
-func checkSession(next http.Handler) http.Handler {
+func checkSessionToken(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(rw http.ResponseWriter, req *http.Request) {
+		var X map[string]string
+		err := json.NewDecoder(req.Body).Decode(&X)
+		if err != nil {
+			panic(err)
+		}
+
+		if c, ok := X["token"]; ok {
+			sessionToken := c
+			response, err := cache.Do("GET", sessionToken)
+			if err != nil {
+				rw.WriteHeader(http.StatusInternalServerError)
+				return
+			}
+			if response == nil {
+				forbidden := errorStruct{}
+				forbidden.Message = "You are not logged in"
+				forbidden.Status = 401
+
+				frb, err := json.Marshal(forbidden)
+				if err != nil {
+					rw.WriteHeader(http.StatusInternalServerError)
+				}
+				rw.Header().Set("content-type", "application/json")
+				rw.WriteHeader(200)
+				rw.Write(frb)
+				return
+			}
+			next.ServeHTTP(rw, req)
+			return
+		}
+		forbidden := errorStruct{}
+		forbidden.Message = "Auth token not found"
+		forbidden.Status = 401
+
+		frb, err := json.Marshal(forbidden)
+		if err != nil {
+			rw.WriteHeader(http.StatusInternalServerError)
+		}
+		rw.Header().Set("content-type", "application/json")
+		rw.WriteHeader(200)
+		rw.Write(frb)
+		return
+	})
+}
+
+// DEPRECATED __________________________________________________________________________________________
+/*func checkSession(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(rw http.ResponseWriter, req *http.Request) {
 		c, err := req.Cookie("session_token")
 		if err != nil {
@@ -115,5 +178,8 @@ func checkSession(next http.Handler) http.Handler {
 			return
 		}
 		next.ServeHTTP(rw, req)
+		return
 	})
 }
+*/
+// DEPRECATED __________________________________________________________________________________________

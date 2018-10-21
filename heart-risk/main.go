@@ -9,15 +9,18 @@ import (
 
 func main() {
 	valueTest()
-	//testBroker()
+	testBroker()
 	initSessionCache()
 	initConnector()
 
 	predictHandler := http.HandlerFunc(predict)
+	loginHandler := http.HandlerFunc(login)
+	testHandler := http.HandlerFunc(test)
 
-	http.Handle("/predict", checkSession(predictHandler))
-	http.HandleFunc("/test", test)
-	http.HandleFunc("/login", login)
+	http.Handle("/predict", checkSessionToken(predictHandler))
+	http.Handle("/test", checkSessionToken(testHandler))
+	http.Handle("/login", corsHandler(loginHandler))
+	http.HandleFunc("/echo", echo)
 
 	srv := &http.Server{
 		ReadTimeout:  5 * time.Second,
@@ -89,4 +92,37 @@ func test(rw http.ResponseWriter, req *http.Request) {
 	rw.Header().Set("Content-type", "application/json")
 	rw.WriteHeader(200)
 	rw.Write(rb)
+}
+
+func echo(rw http.ResponseWriter, req *http.Request) {
+	decoder := json.NewDecoder(req.Body)
+	var T InputStruct
+	err := decoder.Decode(&T)
+	erb, err := json.Marshal(T)
+	if err != nil {
+		panic(err)
+	}
+
+	allowedHeaders := "Accept, Content-Type, Content-Length, Accept-Encoding, Authorization,X-CSRF-Token"
+	rw.Header().Set("Content-type", "application/json")
+	rw.Header().Set("Access-Control-Allow-Origin", "*")
+	rw.Header().Set("Access-Control-Allow-Headers", allowedHeaders)
+	rw.WriteHeader(200)
+	rw.Write(erb)
+}
+
+func corsHandler(h http.Handler) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		if r.Method == "OPTIONS" {
+			//handle preflight in here
+			allowedHeaders := "Accept, Content-Type, Content-Length, Accept-Encoding, Authorization,X-CSRF-Token"
+			w.Header().Set("Content-type", "application/json")
+			w.Header().Set("Access-Control-Allow-Origin", "*")
+			w.Header().Set("Access-Control-Allow-Headers", allowedHeaders)
+			w.Header().Set("Access-Control-Allow-Credentials", "true")
+			w.WriteHeader(200)
+			return
+		}
+		h.ServeHTTP(w, r)
+	}
 }
