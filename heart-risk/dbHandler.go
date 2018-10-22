@@ -59,6 +59,20 @@ func DBfindUser(uname string, email string) (status bool) {
 	}
 }
 
+// DBfetchName return user's name
+func DBfetchName(uname string) (name string) {
+	var u string
+	row := db.QueryRow("select name from user where username=?", uname)
+	switch err := row.Scan(&u); err {
+	case sql.ErrNoRows:
+		return ""
+	case nil:
+		return u
+	default:
+		panic(err)
+	}
+}
+
 // DBCreateUser to create a new validated user
 func DBCreateUser(US User) {
 	stmt, err := db.Prepare("insert user set username=?, email=?, password=?, name=?")
@@ -74,7 +88,7 @@ func DBCreateUser(US User) {
 
 // DBfetchUserHistory to fetch array of historical scans for a user
 func DBfetchUserHistory(username string) (History []Scan) {
-	query := "select * from scan where username=?"
+	query := "select * from scan where username=? order by createdat desc"
 	rows, err := db.Query(query, username)
 	checkErr(err)
 	defer rows.Close()

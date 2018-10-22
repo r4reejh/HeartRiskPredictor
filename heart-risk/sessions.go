@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"net/http"
 	"regexp"
-	"time"
 
 	"github.com/gomodule/redigo/redis"
 	uuid "github.com/satori/go.uuid"
@@ -23,7 +22,7 @@ func initSessionCache() {
 
 func login(rw http.ResponseWriter, req *http.Request) {
 
-	allowedHeaders := "Accept, Content-Type, Content-Length, Accept-Encoding, Authorization,X-CSRF-Token"
+	allowedHeaders := "Accept, Content-Type, Content-Length, Accept-Encoding, Authorization,X-CSRF-Token, X-Hp-Token"
 
 	var T Credentials
 	decoder := json.NewDecoder(req.Body)
@@ -35,23 +34,18 @@ func login(rw http.ResponseWriter, req *http.Request) {
 	sessionToken, err := uuid.NewV4()
 	if DBcheckUserValid(T.Username, T.Password) {
 		v, err := cache.Do("SETEX", sessionToken, "86400", T.Username)
+		name := DBfetchName(T.Username)
 		if err != nil {
 			rw.WriteHeader(http.StatusInternalServerError)
 			panic(err)
 		}
 		fmt.Println(v)
 
-		http.SetCookie(rw, &http.Cookie{
-			Name:    "session_token",
-			Value:   sessionToken.String(),
-			Expires: time.Now().Add(120 * time.Second),
-		})
-
 		successMessage := loginResponse{}
 		successMessage.Message = "Logged in successfully"
 		successMessage.Status = 200
 		successMessage.Token = sessionToken.String()
-
+		successMessage.Name = name
 		srb, err := json.Marshal(successMessage)
 		if err != nil {
 			panic(err)
@@ -116,7 +110,7 @@ func signup(rw http.ResponseWriter, req *http.Request) {
 		checkErr(err)
 	}
 
-	allowedHeaders := "Accept, Content-Type, Content-Length, Accept-Encoding, Authorization,X-CSRF-Token"
+	allowedHeaders := "Accept, Content-Type, Content-Length, Accept-Encoding, Authorization,X-CSRF-Token, X-Hp-Token"
 	rw.Header().Set("Content-type", "application/json")
 	rw.Header().Set("Access-Control-Allow-Origin", "*")
 	rw.Header().Set("Access-Control-Allow-Headers", allowedHeaders)

@@ -20,7 +20,7 @@ func info(rw http.ResponseWriter, req *http.Request) {
 		rb, err := json.Marshal(history)
 		checkErr(err)
 
-		allowedHeaders := "Accept, Content-Type, Content-Length, Accept-Encoding, Authorization,X-CSRF-Token"
+		allowedHeaders := "Accept, Content-Type, Content-Length, Accept-Encoding, Authorization,X-CSRF-Token, X-Hp-Token"
 		rw.Header().Set("Content-type", "application/json")
 		rw.Header().Set("Access-Control-Allow-Origin", "*")
 		rw.Header().Set("Access-Control-Allow-Headers", allowedHeaders)

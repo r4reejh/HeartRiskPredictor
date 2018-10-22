@@ -21,7 +21,7 @@ func main() {
 	testHandler := http.HandlerFunc(test)
 	infoHandler := http.HandlerFunc(info)
 
-	http.Handle("/predict", checkSessionToken(predictHandler))
+	http.Handle("/predict", corsHandler(checkSessionToken(predictHandler)))
 	http.Handle("/test", checkSessionToken(testHandler))
 	http.Handle("/login", corsHandler(loginHandler))
 	http.Handle("/signup", corsHandler(signupHandler))
@@ -110,7 +110,7 @@ func echo(rw http.ResponseWriter, req *http.Request) {
 		panic(err)
 	}
 
-	allowedHeaders := "Accept, Content-Type, Content-Length, Accept-Encoding, Authorization,X-CSRF-Token"
+	allowedHeaders := "Accept, Content-Type, Content-Length, Accept-Encoding, Authorization,X-CSRF-Token, X-Hp-Token"
 	rw.Header().Set("Content-type", "application/json")
 	rw.Header().Set("Access-Control-Allow-Origin", "*")
 	rw.Header().Set("Access-Control-Allow-Headers", allowedHeaders)
@@ -120,13 +120,12 @@ func echo(rw http.ResponseWriter, req *http.Request) {
 
 func corsHandler(h http.Handler) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-
+		allowedHeaders := "Accept, Content-Type, Content-Length, Accept-Encoding, Authorization,X-CSRF-Token, X-Hp-Token"
+		w.Header().Set("Content-type", "application/json")
+		w.Header().Set("Access-Control-Allow-Origin", "*")
+		w.Header().Set("Access-Control-Allow-Headers", allowedHeaders)
+		w.Header().Set("Access-Control-Allow-Credentials", "true")
 		if r.Method == "OPTIONS" {
-			allowedHeaders := "Accept, Content-Type, Content-Length, Accept-Encoding, Authorization,X-CSRF-Token"
-			w.Header().Set("Content-type", "application/json")
-			w.Header().Set("Access-Control-Allow-Origin", "*")
-			w.Header().Set("Access-Control-Allow-Headers", allowedHeaders)
-			w.Header().Set("Access-Control-Allow-Credentials", "true")
 			//handle preflight in here
 			w.WriteHeader(200)
 			return

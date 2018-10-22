@@ -31,6 +31,7 @@ type loginResponse struct {
 	Message string
 	Status  int
 	Token   string
+	Name    string
 }
 
 type responseStruct struct {
